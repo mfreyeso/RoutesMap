@@ -50,6 +50,29 @@ class ViewController: UIViewController, MKMapViewDelegate {
         mapOutlet.addAnnotation(handlerPoint)
     
     }
+    
+    func requestRoute(source: MKMapItem, destination: MKMapItem){
+        let request = MKDirectionsRequest()
+        request.source = source
+        request.destination = destination
+        request.transportType = .automobile
+        
+        let indications = MKDirections(request: request)
+        indications.calculate(completionHandler: {
+            (response: MKDirectionsResponse?, error: Error?) in
+            if error != nil {
+                print("Error when it executed")
+            } else {
+                self.showRoute(response: response!)
+            }
+        })
+    }
+    
+    func showRoute(response: MKDirectionsResponse){
+        for route in response.routes {
+            // mapOutlet.addOverlays(route.polyline, level: MKOverlayLevel.aboveRoads)
+        }
+    }
 
 
 }
