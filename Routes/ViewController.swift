@@ -11,8 +11,8 @@ import MapKit
 
 class ViewController: UIViewController, MKMapViewDelegate {
 
-    private var source: MKMapItem!
-    private var destination: MKMapItem!
+    private var sourceItem: MKMapItem!
+    private var destinationItem: MKMapItem!
     
     @IBOutlet weak var mapOutlet: MKMapView!
     
@@ -22,20 +22,24 @@ class ViewController: UIViewController, MKMapViewDelegate {
         
         mapOutlet.delegate = self
         
-        var pointCoordinates = CLLocationCoordinate2D(latitude: 6.255509, longitude: -75.580916)
-        var pointPlace = MKPlacemark(coordinate: pointCoordinates, addressDictionary: nil)
+        let sourceLocation = CLLocationCoordinate2D(latitude: 6.255509, longitude: -75.580916)
         
-        source = MKMapItem(placemark: pointPlace)
-        source.name = "Home"
+        let destinationLocation = CLLocationCoordinate2D(latitude: 6.274796, longitude: -75.591388)
+
+        var pointPlace = MKPlacemark(coordinate: sourceLocation, addressDictionary: nil)
         
-        pointCoordinates = CLLocationCoordinate2D(latitude: 6.274796, longitude: -75.591388)
-        pointPlace = MKPlacemark(coordinate: pointCoordinates, addressDictionary: nil)
+        sourceItem = MKMapItem(placemark: pointPlace)
+        sourceItem.name = "Home"
         
-        destination = MKMapItem(placemark: pointPlace)
-        destination.name = "College"
+        pointPlace = MKPlacemark(coordinate: destinationLocation, addressDictionary: nil)
         
-        self.putPlaceItem(place: source!)
-        self.putPlaceItem(place: destination!)
+        destinationItem = MKMapItem(placemark: pointPlace)
+        destinationItem.name = "College"
+        
+        self.putPlaceItem(place: sourceItem!)
+        self.putPlaceItem(place: destinationItem!)
+        
+        self.requestRoute(sourceItem: sourceItem!, destinationItem: destinationItem!)
     }
 
     override func didReceiveMemoryWarning() {
@@ -51,29 +55,47 @@ class ViewController: UIViewController, MKMapViewDelegate {
     
     }
     
-    func requestRoute(source: MKMapItem, destination: MKMapItem){
+    func requestRoute(sourceItem: MKMapItem, destinationItem: MKMapItem){
         let request = MKDirectionsRequest()
-        request.source = source
-        request.destination = destination
+        request.source = sourceItem
+        request.destination = destinationItem
         request.transportType = .automobile
         
         let indications = MKDirections(request: request)
-        indications.calculate(completionHandler: {
-            (response: MKDirectionsResponse?, error: Error?) in
+        
+        
+        indications.calculate(completionHandler: {(response, error) in
+            
             if error != nil {
-                print("Error when it executed")
+                print(error.debugDescription)
+                print("Error getting directions")
             } else {
                 self.showRoute(response: response!)
             }
         })
+        
+        
     }
     
     func showRoute(response: MKDirectionsResponse){
         for route in response.routes {
-            // mapOutlet.addOverlays(route.polyline, level: MKOverlayLevel.aboveRoads)
+            mapOutlet.add(route.polyline, level: MKOverlayLevel.aboveRoads)
+            for step in route.steps{
+                print(step.instructions)
+            }
+            mapOutlet.add(route.polyline, level: MKOverlayLevel.aboveRoads)
         }
+        let center = sourceItem.placemark.coordinate
+        let region = MKCoordinateRegionMakeWithDistance(center, 3000, 3000)
+        mapOutlet.setRegion(region, animated: true)
     }
 
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        let renderer = MKPolylineRenderer(overlay: overlay)
+        renderer.strokeColor = UIColor.blue
+        renderer.lineWidth = 3.0
+        return renderer
+    }
 
 }
 
